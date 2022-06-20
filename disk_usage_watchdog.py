@@ -51,6 +51,7 @@ def main():
         ALERT = free_percentage <= config.get("alert_percentage", 30.0)
 
         if ALERT:
+            longest_path = max(paths_to_check, key = len)
             # Build a message for discord
             message = []
             message.append("```")
@@ -65,8 +66,12 @@ def main():
             # Check all paths and their usages
             for path in paths_to_check:
                 path_usage = calculate_usage(path)
-                usage_percentage = round(path_usage / _total * 100, ndigits=2)
-                formatted_usage = f"{path}    {usage_percentage}%    {bytes_to_gigabytes(path_usage):4f}GB"
+                usage_percentage = path_usage / _total * 100
+
+                if path == longest_path:
+                    formatted_usage = f"{path}    {usage_percentage:.2f}%    {bytes_to_gigabytes(path_usage):4f}GB"
+                else:
+                    formatted_usage = f"{path}" + " " * (len(longest_path) - len(path) + 4) + f"{usage_percentage:.2f}%    {bytes_to_gigabytes(path_usage):4f}GB"
                 message.append(formatted_usage)
 
             message.append("```")
