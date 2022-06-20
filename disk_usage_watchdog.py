@@ -10,6 +10,8 @@ from discord_webhook import DiscordWebhook
 __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
 config_path = os.path.join(__location__, "config.json")
 
+SIZE_STRINGS = ["KB", "MB", "GB", "TB", "PB"]
+
 
 def calculate_usage(path: str) -> float:
     total_size = 0
@@ -22,9 +24,14 @@ def calculate_usage(path: str) -> float:
     return total_size
 
 
-def bytes_to_gigabytes(num: Union[int, float]) -> float:
-    """ Converts a byte number into a GB total """
-    return ((num / 1024) / 1024) / 1024
+def bytes_to_string(num: Union[int, float]) -> float:
+    """ Converts a byte value into a size string """
+    i = 0
+    ret = num / 1024
+    while ret >= 1024 and i < 4:
+        i += 1
+        ret = ret / 1024
+    return f"{ret:.2f}{SIZE_STRINGS[i]}"
 
 
 def main():
@@ -56,12 +63,12 @@ def main():
             message = []
             message.append("```")
             message.append("DISK USAGE ALERT:")
-            message.append(f"Used: {bytes_to_gigabytes(_used):.2f}GB/{bytes_to_gigabytes(_total):.2f}GB")
+            message.append(f"Used: {bytes_to_string(_used)}/{bytes_to_string(_total)}")
             message.append(f"There is currently {free_percentage}% of disk space available!")
             message.append("-" * 25)
             message.append("Disk usage by path:")
             message.append("-" * 25)
-            message.append("Path    % usage    Size (GB)")
+            message.append("Path    % usage    Size")
 
             # Check all paths and their usages
             for path in paths_to_check:
@@ -69,9 +76,9 @@ def main():
                 usage_percentage = path_usage / _total * 100
 
                 if path == longest_path:
-                    formatted_usage = f"{path}    {usage_percentage:.2f}%    {bytes_to_gigabytes(path_usage):4f}GB"
+                    formatted_usage = f"{path}    {usage_percentage:.2f}%    {bytes_to_string(path_usage)}"
                 else:
-                    formatted_usage = f"{path}" + " " * (len(longest_path) - len(path) + 4) + f"{usage_percentage:.2f}%    {bytes_to_gigabytes(path_usage):4f}GB"
+                    formatted_usage = f"{path}" + " " * (len(longest_path) - len(path) + 4) + f"{usage_percentage:.2f}%    {bytes_to_string(path_usage)}"
                 message.append(formatted_usage)
 
             message.append("```")
