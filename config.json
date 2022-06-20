@@ -1,5 +1,6 @@
 {
     "overall_usage_path": "/",
+    "alert_percentage": 30.0,
     "paths": [
         "/path/to/dir/to/check"
     ]

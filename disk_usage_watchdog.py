@@ -35,29 +35,37 @@ def main():
     except json.JSONDecodeError:
         quit("Error loading config from disk! Is it a valid JSON format?")
     try:
-        # Main loop
+        print("Calculating usage percentages... this may take some time!")
         overall_usage_path = config.get("overall_usage_path", "/")
         paths_to_check = config.get("paths", [])
         _total, _used, _free = shutil.disk_usage(overall_usage_path)
         free_percentage = round(_free / _total * 100, ndigits=2)
-        print(f"Used: {bytes_to_gigabytes(_used):.2f}GB/{bytes_to_gigabytes(_total):.2f}GB")
-        print(f"There is currently {free_percentage}% of disk space available.")
 
-        print("-" * 25)
-        print("Disk usage by path:")
-        print("-" * 25)
-        
-        print("Path    % usage    Size (GB)")
-        # Will be used later
-        usages = []
-        for path in paths_to_check:
-            path_usage = calculate_usage(path)
-            usage_percentage = round(path_usage / _total * 100, ndigits=2)
+        # If the free space is below the configured threshold (or default 30%), start building a message
+        ALERT = free_percentage <= config.get("alert_percentage", 30.0)
 
-            formatted_usage = f"{path}    {usage_percentage}%    {bytes_to_gigabytes(path_usage):4f}GB"
-            usages.append(formatted_usage)
-            print(formatted_usage)
-        print("-" * 25)
+        if ALERT:
+            # Build a message for discord
+            message = []
+            message.append("```")
+            message.append("DISK USAGE ALERT:")
+            message.append(f"Used: {bytes_to_gigabytes(_used):.2f}GB/{bytes_to_gigabytes(_total):.2f}GB")
+            message.append(f"There is currently {free_percentage}% of disk space available.")
+            message.append("-" * 25)
+            message.append("Disk usage by path:")
+            message.append("-" * 25)
+            message.append("Path    % usage    Size (GB)")
+
+            # Check all paths and their usages
+            for path in paths_to_check:
+                path_usage = calculate_usage(path)
+                usage_percentage = round(path_usage / _total * 100, ndigits=2)
+                formatted_usage = f"{path}    {usage_percentage}%    {bytes_to_gigabytes(path_usage):4f}GB"
+                message.append(formatted_usage)
+
+            message.append("```")
+            print("\n".join(message))
+
     except KeyboardInterrupt:
         quit()
 
