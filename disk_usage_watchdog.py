@@ -58,6 +58,7 @@ def main():
         ALERT = free_percentage <= config.get("alert_percentage", 30.0)
 
         if ALERT:
+            print("Disk usage threshold reached, posting an alert")
             longest_path = max(paths_to_check, key = len)
             # Build a message for discord
             message = []
@@ -85,6 +86,8 @@ def main():
             webhook = DiscordWebhook(url=webhook_url, username="Disk Usage Watchdog", content="\n".join(message))
             webhook.execute()
             # print("\n".join(message))
+        else:
+            print("Threshold for alert not met, not posting an alert")
 
     except KeyboardInterrupt:
         quit()
