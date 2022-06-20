@@ -1,6 +1,7 @@
 {
     "overall_usage_path": "/",
     "alert_percentage": 30.0,
+    "webhook_url": "INSERT WEBHOOK URL HERE",
     "paths": [
         "/path/to/dir/to/check"
     ]

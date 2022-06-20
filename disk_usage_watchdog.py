@@ -5,6 +5,8 @@ import shutil
 import time
 from typing import Union
 
+from discord_webhook import DiscordWebhook
+
 __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
 config_path = os.path.join(__location__, "config.json")
 
@@ -38,6 +40,10 @@ def main():
         print("Calculating usage percentages... this may take some time!")
         overall_usage_path = config.get("overall_usage_path", "/")
         paths_to_check = config.get("paths", [])
+        webhook_url = config.get("webhook_url")
+        if webhook_url is None:
+            quit("PLEASE CONFIGURE A WEBHOOK URL FOR THE PROGRAM!")
+
         _total, _used, _free = shutil.disk_usage(overall_usage_path)
         free_percentage = round(_free / _total * 100, ndigits=2)
 
@@ -50,7 +56,7 @@ def main():
             message.append("```")
             message.append("DISK USAGE ALERT:")
             message.append(f"Used: {bytes_to_gigabytes(_used):.2f}GB/{bytes_to_gigabytes(_total):.2f}GB")
-            message.append(f"There is currently {free_percentage}% of disk space available.")
+            message.append(f"There is currently {free_percentage}% of disk space available!")
             message.append("-" * 25)
             message.append("Disk usage by path:")
             message.append("-" * 25)
@@ -64,7 +70,9 @@ def main():
                 message.append(formatted_usage)
 
             message.append("```")
-            print("\n".join(message))
+            webhook = DiscordWebhook(url=webhook_url, username="Disk Usage Watchdog", content="\n".join(message))
+            webhook.execute()
+            # print("\n".join(message))
 
     except KeyboardInterrupt:
         quit()
