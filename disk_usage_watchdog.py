@@ -5,7 +5,7 @@ import shutil
 import time
 from typing import Union
 
-from discord_webhook import DiscordWebhook
+from discord_webhook import DiscordWebhook, DiscordEmbed
 
 __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
 config_path = os.path.join(__location__, "config.json")
@@ -57,35 +57,31 @@ def main():
         # If the free space is below the configured threshold (or default 30%), start building a message
         ALERT = free_percentage <= config.get("alert_percentage", 30.0)
 
-        if ALERT:
-            print("Disk usage threshold reached, posting an alert")
-            longest_path = max(paths_to_check, key = len)
-            # Build a message for discord
-            message = []
-            message.append("```")
-            message.append("DISK USAGE ALERT:")
-            message.append(f"Used: {bytes_to_string(_used)}/{bytes_to_string(_total)}")
-            message.append(f"There is currently {free_percentage}% of disk space available!")
-            message.append("-" * 25)
-            message.append("Disk usage by path:")
-            message.append("-" * 25)
-            message.append("Path    % usage    Size")
+        # Do not touch :D (for testing purposes)
+        _DEBUG = True
 
-            # Check all paths and their usages
+        if ALERT or _DEBUG:
+            print("Disk usage threshold reached, posting an alert")
+
+            # Build a Discord embed
+            embed = DiscordEmbed(description=f"### Overall Usage\n**Total Space Used:** `{bytes_to_string(_used)}/{bytes_to_string(_total)}`\n", color="03b2f8")
+            embed.set_author(name="Disk Usage Watchdog")
+
+            # Add markdown-formatted text to the description
+            markdown_text = "### Disk Usage By Path\n"
             for path in paths_to_check:
                 path_usage = calculate_usage(path)
                 usage_percentage = path_usage / _total * 100
+                markdown_text += f"**File Path:** `{path}`\n**Usage:** `{usage_percentage:.2f}% ({bytes_to_string(path_usage)})`\n\n"
 
-                if path == longest_path:
-                    formatted_usage = f"{path}    {usage_percentage:.2f}%    {bytes_to_string(path_usage)}"
-                else:
-                    formatted_usage = f"{path}" + " " * (len(longest_path) - len(path) + 4) + f"{usage_percentage:.2f}%    {bytes_to_string(path_usage)}"
-                message.append(formatted_usage)
+            embed.description += markdown_text
 
-            message.append("```")
-            webhook = DiscordWebhook(url=webhook_url, username="Disk Usage Watchdog", content="\n".join(message))
+            # Add the free space info to the description
+            embed.description += f"\nThere is currently {free_percentage}% of disk space available!"
+
+            webhook = DiscordWebhook(url=webhook_url, username="Disk Usage Watchdog", content="")
+            webhook.add_embed(embed)
             webhook.execute()
-            # print("\n".join(message))
         else:
             print("Threshold for alert not met, not posting an alert")
 
